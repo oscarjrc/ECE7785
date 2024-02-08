@@ -103,9 +103,9 @@ class FindObject(Node):
 
         self._point_publish.publish(msg)
 
-        if(self._display_image):
-        # Display the image in a window
-            self.show_image(self._imgBGR)
+        #if(self._display_image):
+        ## Display the image in a window
+        #    self.show_image(self._imgBGR)
 
     def get_image(self):
         return self._imgBGR
@@ -123,11 +123,11 @@ def main(args = None):
     find_object = FindObject() #Create class object to be used.
     while rclpy.ok():
         rclpy.spin_once(find_object) # Trigger callback processing.
-        if(find_object._display_image):
-            find_object.show_image(find_object.get_image())
-            if find_object.get_user_input() == ord('q'):
-                cv2.destroyAllWindows()
-                break
+        #if(find_object._display_image):
+        #    find_object.show_image(find_object.get_image())
+        #    if find_object.get_user_input() == ord('q'):
+        #        cv2.destroyAllWindows()
+        #        break
     #Clean up and shutdown.
     find_object.destroy_node()
     rclpy.shutdown()
