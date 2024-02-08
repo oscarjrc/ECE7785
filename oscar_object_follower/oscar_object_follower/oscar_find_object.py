@@ -107,27 +107,22 @@ class FindObject(Node):
         ## Display the image in a window
         #    self.show_image(self._imgBGR)
 
-    def get_image(self):
-        return self._imgBGR
+    #def get_image(self):
+    #    return self._imgBGR
 
-    def show_image(self, img):
-        cv2.imshow(self._titleOriginal, img)    
-        # Cause a slight delay so image is displayed
-        self._user_input=cv2.waitKey(50) #Use OpenCV keystroke grabber for delay.
+    #def show_image(self, img):
+    #    cv2.imshow(self._titleOriginal, img)    
+    #    # Cause a slight delay so image is displayed
+    #    self._user_input=cv2.waitKey(50) #Use OpenCV keystroke grabber for delay.
 
-    def get_user_input(self):
-        return self._user_input
+    #def get_user_input(self):
+    #    return self._user_input
 
 def main(args = None):
     rclpy.init() #init routine needed for ROS2.
     find_object = FindObject() #Create class object to be used.
-    while rclpy.ok():
-        rclpy.spin_once(find_object) # Trigger callback processing.
-        #if(find_object._display_image):
-        #    find_object.show_image(find_object.get_image())
-        #    if find_object.get_user_input() == ord('q'):
-        #        cv2.destroyAllWindows()
-        #        break
+    rclpy.spin(find_object)
+
     #Clean up and shutdown.
     find_object.destroy_node()
     rclpy.shutdown()
