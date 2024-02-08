@@ -29,10 +29,10 @@ class FindObject(Node):
         self._titleOriginal = self.get_parameter('window_name').value # Image Window Title
 
         #Only create image frames if we are not running headless (_display_image sets this)
-        if(self._display_image):
-        # Set Up Image Viewing
-            cv2.namedWindow(self._titleOriginal, cv2.WINDOW_AUTOSIZE ) #Viewing Window
-            cv2.moveWindow(self._titleOriginal, 50, 50) # Viewing Window Original Location
+        #if(self._display_image):
+        ## Set Up Image Viewing
+        #    cv2.namedWindow(self._titleOriginal, cv2.WINDOW_AUTOSIZE ) #Viewing Window
+        #    cv2.moveWindow(self._titleOriginal, 50, 50) # Viewing Window Original Location
 
         #Set up QoS Profiles for passing images over WiFi
         image_qos_profile = QoSProfile(
