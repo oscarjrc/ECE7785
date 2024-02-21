@@ -35,8 +35,9 @@ class RotateRobot(Node):
         error = 160 - x
         control = round(error * kp,2)
 
-        vec.z = control
-        msg.angular = vec
+        msg.angular.z = control
+        #vec.z = control
+        #msg.angular = vec
         self._twist_publish.publish(msg)
 
         # print(control)
