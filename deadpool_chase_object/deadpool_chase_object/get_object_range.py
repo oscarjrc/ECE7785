@@ -4,6 +4,7 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
+from rclpy.qos import QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy, QoSHistoryPolicy
 from geometry_msgs.msg import Point, Twist
 
 import numpy as np
@@ -11,6 +12,10 @@ import numpy as np
 class GetObjectRange(Node):
     def __init__(self):
         super().__init__('get_object_range')
+
+        qos_policy = rclpy.qos.QoSProfile(reliability=rclpy.qos.ReliabilityPolicy.BEST_EFFORT,
+                                          history=rclpy.qos.HistoryPolicy.KEEP_LAST,
+                                          depth=1)
 
         self._obj_subscriber = self.create_subscription(
             Point,
@@ -24,7 +29,7 @@ class GetObjectRange(Node):
             self._laser_callback,
             5)
         
-        self._dir_publish = self.create_publisher(Twist,'/obj_rng',5)
+        self._dir_publish = self.create_publisher(Twist,'/obj_rng',qos_policy)
 
 
     def _obj_callback(self, Point):
