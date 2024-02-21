@@ -22,7 +22,7 @@ class GetObjectRange(Node):
             LaserScan,
             '/scan',
             self._laser_callback,
-            10)
+            9)
         
         self._dir_publish = self.create_publisher(Twist,'/obj_rng',5)
 
