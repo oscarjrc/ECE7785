@@ -36,11 +36,10 @@ class ViewImage(Node):
 
         #Set up QoS Profiles for passing images over WiFi
         image_qos_profile = QoSProfile(
-            reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
-            history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
-            durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_VOLATILE,
-            depth=1
-        )
+            reliability=rclpy.qos.ReliabilityPolicy.BEST_EFFORT,
+            history=rclpy.qos.HistoryPolicy.KEEP_LAST,
+            durability=rclpy.qos.DurabilityPolicy.VOLATILE,
+            depth=1)
 
         #Declare that the minimal_view_image node is subcribing to the /camera/image/compressed topic.
         self._view_image = self.create_subscription(

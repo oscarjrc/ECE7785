@@ -11,11 +11,17 @@ class ChaseObject(Node):
     def __init__(self):
         super().__init__('chase_object')
 
+        qos_policy = rclpy.qos.QoSProfile(
+            reliability=rclpy.qos.ReliabilityPolicy.BEST_EFFORT,
+            history=rclpy.qos.HistoryPolicy.KEEP_LAST,
+            durability=rclpy.qos.DurabilityPolicy.VOLATILE,
+            depth=1)
+
         self._obj_subscriber = self.create_subscription(
             Twist,
             '/obj_rng',
             self._dir_callback,
-            5)
+            qos_policy)
         
         self._vel_publish = self.create_publisher(Twist,'/cmd_vel',10)
 
@@ -26,10 +32,10 @@ class ChaseObject(Node):
         dist = twist.linear.x   #meters
         angl = twist.angular.z  #rad
 
-        kp_d = 0.1
-        kp_a = 0.01
+        kp_d = 0.3
+        kp_a = 0.09
 
-        ref = 0.2                       #meters
+        ref = 0.45                       #meters
         dist_e = ref - dist
         angl_e = angl * (180 / np.pi)   #deg
 
