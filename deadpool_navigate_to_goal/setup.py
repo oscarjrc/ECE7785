@@ -24,6 +24,7 @@ setup(
     entry_points={
         'console_scripts': [
         'getobjrng = deadpool_navigate_to_goal.get_object_range:main',
+        'gtg = deadpool_navigate_to_goal.go_to_goal:main',
         ],
     },
 )

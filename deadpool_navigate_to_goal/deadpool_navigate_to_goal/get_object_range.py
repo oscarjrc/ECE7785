@@ -45,6 +45,7 @@ class GetObjectRange(Node):
         # rng = np.append(rng_left,rng_right)
 
         for i in range(1,len(rng)-1):
+            # if(abs(rng[i-1] - rng[i+1]) >= 1.0) and ((i < 60) or (i > 300)):
             if(abs(rng[i-1] - rng[i+1]) >= 1.0):
                 _msg2 = Pose()
                 rng2[i] = rng[i]
