@@ -1,15 +1,16 @@
 #!/usr/bin/env python
-#Oscar Jed Chuy
+#Oscar Jed Chuy and Jack Curtis
 
 import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseArray, Pose, Twist, Quaternion
+from geometry_msgs.msg import PoseArray, Pose, Twist, Quaternion, Point
 import math
 
 import numpy as np
 
 class GoToGoal(Node):
+    Init = True
 
     state = 0   #0 to 2
     waypoint = 0    #0: looking for waypoint, 1:moving to waypoint
@@ -42,7 +43,6 @@ class GoToGoal(Node):
         self._vel_publish = self.create_publisher(Twist,'/cmd_vel',10)
 
     def _odometry_callback(self, Odometry): #Global
-        data = Quaternion()
         
         self.odom = Odometry
         self.position = self.odom.pose.pose.position
@@ -52,18 +52,40 @@ class GoToGoal(Node):
 
         self.yaw = rpy[2]
         self.yaw = self.yaw*180/np.pi #deg
-        # print(self.position)
-        # print(self.yaw)
+
+        # print('Position: ' + str(self.position))
+        # print((self.position.x == 0.0))
+
+        if GoToGoal.Init:
+            self.Init_pos = Point()
+
+            if ((self.position.x != 0.0) and (self.position.y != 0.0)):
+                GoToGoal.Init = False
+            # print('In intit')
+            #The initial data is stored to by subtracted to all the other values as we want to start at position (0,0) and orientation 0
+            self.Init_ang = self.yaw    #deg
+            self.Init_pos.x = self.position.x
+            self.Init_pos.y = self.position.y
+            # print('Position: ' + str(self.position))
+            # print('Init Pos: ' + str(self.Init_pos))
+            # print('Init Agl: ' + str(self.Init_ang))
+
+        # Resets current pos and ori to (0,0) & 0 deg
+        self.position.x = self.position.x - self.Init_pos.x
+        self.position.y = self.position.y - self.Init_pos.y
+        self.yaw = self.yaw - self.Init_ang
+
+        # print('State: ' + str(GoToGoal.Init))
+        # print('Init Pos: ' + str(self.Init_pos))
+        # print('Init Agl: ' + str(self.Init_ang))
+        # print('Position: ' + str(self.position))
+        # print('Angle: ' + str(self.yaw))
         # print('---------------------------------------------')
-        # print('Test1')
 
     def _object_callback(self, PoseArray):  #Local
         self.posearray = PoseArray.poses
-        
-        # print(len(self.posearray))
-        
         if len(self.posearray) != 0:
-            self.rays = int(self.posearray[1].position.z)
+            self.rays = int(self.posearray[0].position.z)
         else:
             self.rays = 0
 
@@ -74,13 +96,12 @@ class GoToGoal(Node):
             self.ori = np.append(self.ori,self.posearray[i].orientation.z)
         
         self.gotogoal()
-        # print(dis)
+            
+        # print(self.dis)
         # print('---------------------------------------------')
-        # print(ori)
+        # print(self.ori)
         # print('---------------------------------------------')
         # print(self.rays)
-
-        
     
     def gotogoal(self):
         msg = Twist()
@@ -98,7 +119,7 @@ class GoToGoal(Node):
             # angl = ( math.acos((self.ref[GoToGoal.state][0] - self.loc[0])/(self.dist_e)) * 180 / math.pi) - self.yaw #deg
             angl = math.atan2(dif[1],dif[0]) * 180 / math.pi - self.yaw       #deg
         else:
-            print('In waypoint')
+            # print('In waypoint')
             dif = GoToGoal.ref_new - self.loc
             self.dist_e = np.linalg.norm(dif)
 
@@ -117,10 +138,10 @@ class GoToGoal(Node):
         if abs(angl_e) >= 5.0:
             self.dist_u = 0.0
 
-        if self.dist_u >= 0.10:
-            self.dist_u = 0.10
-        elif self.dist_u <= -0.10:
-            self.angl_u = -0.10
+        if self.dist_u >= 0.09:
+            self.dist_u = 0.09
+        elif self.dist_u <= -0.09:
+            self.angl_u = -0.09
 
         if self.angl_u >= 0.2:
             self.angl_u = 0.2
@@ -152,7 +173,7 @@ class GoToGoal(Node):
             self.pickobj()
 
     def pickobj(self):
-        boundary = 0.3
+        boundary = 0.4  #0.4
 
         distance = self.dis
         orientation = self.ori
@@ -161,12 +182,20 @@ class GoToGoal(Node):
             if distance[i] < boundary: #meters
                 obj = np.vstack((obj,np.array([distance[i], orientation[i]])))
             # print('Dist: ' + str(distance[i]) + ' Orient: ' + str(orientation[i]))
-
-        # print(len(obj))
-        if len(obj)-2  != 0:
+        
+        # print('Objects: ' + str(obj))
+                
+        print(len(obj))
+        if (len(obj) != 2) and (len(obj) != 3) and (len(obj) != 4) and (len(obj) != 5) and (len(obj) != 6) and (len(obj) != 7):
+            # If too many points, pick midlle ones --------------------------------------------
+            hlf = math.floor(len(obj)/2)
+            obj = np.vstack((obj[hlf-3],obj[hlf+3]))
+            # print('Updated Objects: ' + str(obj))
+        
             #for two point case:
             obj_G = self.LtoG(obj)
             self.vect_goal = np.array([self.ref[GoToGoal.state][0] - self.loc[0], self.ref[GoToGoal.state][1] - self.loc[1]])
+        
             self.vect_obj = np.array([0,0])
             pickpt = np.array([])
             obj_dis = np.array([])
@@ -178,16 +207,20 @@ class GoToGoal(Node):
                 
                 self.vect_obj = np.vstack((self.vect_obj,direction))
                 obj_dis = np.append(obj_dis,np.linalg.norm(direction))
-                chs_ang = np.arccos(np.dot(self.vect_goal,direction) / (obj_dis[i-1] * self.dist_e)) * 180 / math.pi #de
+                # print(obj_dis)
+                chs_ang = np.arccos(np.dot(self.vect_goal,direction) / (obj_dis[i-1] * self.dist_e)) * 180 / math.pi #deg
                 pickpt = np.append(pickpt,chs_ang)
 
                 # print('Dotproduct: ' + str(np.dot(self.vect_goal,direction) ))
             
+            # print(obj_dis)
+            print(pickpt)
+
             # Project a new point along direction
-                
-            epsilon = 0.5   # new distance
+            epsilon = 0.7   # new distance
             if pickpt[0] < pickpt[1]:
-                print('L2R')
+            # if True:
+                # print('L2R')
                 edg = obj_G[1]
                 # pt2pt = [obj_G[1][0] - obj_G[2][0],obj_G[1][1]] - obj_G[2][1]   #L2R
                 pt2pt = obj_G[1]-obj_G[2]
@@ -204,13 +237,13 @@ class GoToGoal(Node):
             GoToGoal.ref_new = new_point
             GoToGoal.waypoint = 1
 
-            print('L2R Direction: ' + str(pt2pt))
-            print('L2R Unit Direction: ' + str(pt2pt_unit))
-            # print('Norm: ' + str(direction_))
-            print('Object Distance: ' + str(obj_dis))
-            print('Vector Angles: ' + str(pickpt))
-            print('Close to object: \n' + str(obj_G))
-            print('Choosen edge: ' + str(edg))
+            print('New pt Direction: ' + str(pt2pt))
+            print('New pt Unit Direction: ' + str(pt2pt_unit))
+            # print('Vectors ' + str(direction_))
+            # print('Object Distance: ' + str(obj_dis))
+            # print('Vector Angles: ' + str(pickpt))
+            # print('Close to object: \n' + str(obj_G))
+            # print('Choosen edge: ' + str(edg))
             print('New Point: ' + str(new_point))
             # print('Goal Vector: ' + str(self.vect_goal))
             # print('Object Vector: \n' + str(self.vect_obj))
@@ -219,7 +252,7 @@ class GoToGoal(Node):
 
     def LtoG(self,data):
         new = np.array([0,0])
-        for i in range(1,len(data)):
+        for i in range(0,len(data)):
             theta_i = data[i][1] * 360 / self.rays
             x_G = self.loc[0] + (data[i][0] * math.cos((self.yaw + theta_i) * math.pi / 180))
             y_G = self.loc[1] + (data[i][0] * math.sin((self.yaw + theta_i) * math.pi / 180))
